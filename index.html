@@ -57,6 +57,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:14px;backgrou
 .tabs2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px} .tabs2 button{border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px} .tabs2 button.active{background:#ffe1d2;color:#9d5434}
 .error{color:#b24c40;font-size:12px;margin-top:8px} .loading{padding:40px;text-align:center;color:var(--muted)}
 @media(min-width:680px){.breakfast-grid{grid-template-columns:repeat(4,1fr)} .library-grid{grid-template-columns:repeat(3,1fr)} .pick-grid{grid-template-columns:repeat(3,1fr)}}
+
+.edit-card-btn{margin-top:8px;width:100%;border:1px solid var(--line);background:#fff7f2;color:#9b5b3e;border-radius:11px;padding:7px 9px;font-size:12px;font-weight:700}
+.hidden-dish{opacity:.55}
+.danger{width:100%;border:0;border-radius:16px;padding:13px 14px;font-weight:800;margin-top:10px;background:#fff0ec;color:#b24c40}
 </style>
 </head>
 <body>
@@ -142,6 +146,19 @@ input,select{width:100%;border:1px solid var(--line);border-radius:14px;backgrou
 <button class="primary" id="savePickerBtn">保存</button><button class="secondary closeModal">取消</button>
 </div></div></div>
 
+
+<div class="modal" id="editDishModal"><div class="sheet"><div class="sheet-inner">
+<h3 id="editDishHeading">编辑菜品</h3>
+<label class="field"><span id="editDishNameLabel">菜名</span><input id="editDishName"></label>
+<label class="field"><span id="editDishCategoryLabel">分类</span><select id="editDishCategory"></select></label>
+<label class="field"><span id="editDishPhotoLabel">更换照片</span><input id="editDishPhoto" type="file" accept="image/*" capture="environment"></label>
+<label class="field"><span id="editDishNoteLabel">备注</span><input id="editDishNote"></label>
+<label class="setting-row" style="margin-top:12px"><span id="editQuickLabel">快捷备用</span><input type="checkbox" id="editDishQuick"></label>
+<button class="primary" id="saveDishEditBtn">保存修改</button>
+<button class="danger" id="hideDishBtn">隐藏菜品</button>
+<button class="secondary closeModal">取消</button>
+</div></div></div>
+
 <div class="modal" id="addDishModal"><div class="sheet"><div class="sheet-inner">
 <h3 id="addDishHeading">添加菜品</h3>
 <label class="field"><span id="dishNameLabel">菜名</span><input id="newDishName"></label>
@@ -186,7 +203,7 @@ const defaultDishes=[
 
 let state={
  lang:localStorage.getItem("fm_lang")||"zh",
- user:null,household:null,member:null,dishes:[],items:[],settings:null,libraryCat:"breakfast"
+ user:null,household:null,member:null,dishes:[],items:[],settings:null,libraryCat:"breakfast",showHidden:false
 };
 let pickerType=null,tempSelection=null,channel=null;
 const today=new Date(); const todayKey=today.toISOString().slice(0,10);
@@ -227,7 +244,7 @@ async function seedDishesIfEmpty(){
  if(count>0)return;
  const rows=defaultDishes.map(x=>({
    household_id:state.household.id,name_zh:x[0],name_en:x[1],category:x[2],
-   image_url:demoImages[x[3]],is_quick:true,created_by:state.user.id
+   image_url:demoImages[x[3]],is_quick:true,is_active:true,created_by:state.user.id
  }));
  const {error:e}=await sb.from("dishes").insert(rows);
  if(e) throw e;
@@ -306,8 +323,18 @@ function renderI18n(){
 function renderLibrary(){
  const cats=["breakfast","meat","veg","soup","staple"],tabs=document.getElementById("libraryTabs");tabs.innerHTML="";
  cats.forEach(c=>{const btn=document.createElement("button");btn.textContent=t(c);btn.className=state.libraryCat===c?"active":"";btn.onclick=()=>{state.libraryCat=c;renderLibrary()};tabs.appendChild(btn)});
+ if(canEdit()){
+   const hb=document.createElement("button");
+   hb.textContent=state.showHidden?(state.lang==="zh"?"隐藏停用菜":"Hide inactive"):(state.lang==="zh"?"显示停用菜":"Show inactive");
+   hb.onclick=()=>{state.showHidden=!state.showHidden;renderLibrary()};
+   tabs.appendChild(hb);
+ }
  const g=document.getElementById("libraryGrid");g.innerHTML="";
- state.dishes.filter(d=>d.category===state.libraryCat).forEach(d=>{const el=document.createElement("div");el.className="library-card";el.innerHTML=`<img src="${d._src||d.image_url||""}"><div class="body"><strong>${dishName(d)}</strong>${d.is_quick?`<div class="badge">${state.lang==="zh"?"快捷备用":"Quick"}</div>`:""}</div>`;g.appendChild(el)});
+ state.dishes.filter(d=>d.category===state.libraryCat && (state.showHidden || d.is_active!==false)).forEach(d=>{
+   const el=document.createElement("div");el.className="library-card"+(d.is_active===false?" hidden-dish":"");
+   el.innerHTML=`<img src="${d._src||d.image_url||""}"><div class="body"><strong>${dishName(d)}</strong>${d.is_quick?`<div class="badge">${state.lang==="zh"?"快捷备用":"Quick"}</div>`:""}${d.is_active===false?`<div class="badge">${state.lang==="zh"?"已停用":"Inactive"}</div>`:""}${canEdit()?`<button class="edit-card-btn" onclick="openEditDish('${d.id}')">${state.lang==="zh"?"编辑":"Edit"}</button>`:""}</div>`;
+   g.appendChild(el)
+ });
  document.getElementById("addDishFab").style.display=canEdit()?"block":"none";
 }
 function renderHistory(){
@@ -343,7 +370,7 @@ function selected(cat,id){return selectionArray(cat).some(x=>x.dish_id===id)}
 function togglePick(cat,id){const arr=selectionArray(cat),ix=arr.findIndex(x=>x.dish_id===id);if(ix>=0)arr.splice(ix,1);else arr.push({dish_id:id,picked_by_role:state.member.role});renderPickerBody()}
 function renderPickerBody(){
  const body=document.getElementById("pickerBody");body.innerHTML="";const sections=pickerType==="breakfast"?["breakfast"]:["meat","veg","soup","staple"];
- sections.forEach(cat=>{const sec=document.createElement("div");sec.className="pick-section";sec.innerHTML=`<h4>${t(cat)}</h4><div class="pick-grid"></div>`;const grid=sec.querySelector(".pick-grid");state.dishes.filter(d=>d.category===cat&&d.is_quick).forEach(d=>{const btn=document.createElement("button");btn.className="pick-card"+(selected(cat,d.id)?" selected":"");btn.innerHTML=`<span class="check">✓</span><img src="${d._src||d.image_url||""}"><div class="body"><strong>${dishName(d)}</strong><div class="food-meta">${["meat","veg"].includes(cat)?`${state.lang==="zh"?"本周第":"#"}${weeklyCount(d.id,cat)}${state.lang==="zh"?"次":" this week"}`:""}</div></div>`;btn.onclick=()=>togglePick(cat,d.id);grid.appendChild(btn)});body.appendChild(sec)});
+ sections.forEach(cat=>{const sec=document.createElement("div");sec.className="pick-section";sec.innerHTML=`<h4>${t(cat)}</h4><div class="pick-grid"></div>`;const grid=sec.querySelector(".pick-grid");state.dishes.filter(d=>d.category===cat&&d.is_quick&&d.is_active!==false).forEach(d=>{const btn=document.createElement("button");btn.className="pick-card"+(selected(cat,d.id)?" selected":"");btn.innerHTML=`<span class="check">✓</span><img src="${d._src||d.image_url||""}"><div class="body"><strong>${dishName(d)}</strong><div class="food-meta">${["meat","veg"].includes(cat)?`${state.lang==="zh"?"本周第":"#"}${weeklyCount(d.id,cat)}${state.lang==="zh"?"次":" this week"}`:""}</div></div>`;btn.onclick=()=>togglePick(cat,d.id);grid.appendChild(btn)});body.appendChild(sec)});
  if(pickerType==="dinner"){const sec=document.createElement("div");sec.className="pick-section";sec.innerHTML=`<h4>🥡 ${t("takeaway")}</h4><div class="input-row"><input id="takeawayInput" placeholder="${t("takeawayPH")}"><button class="mini" id="addTakeawayBtn">${t("addTakeaway")}</button></div><div id="takeawayChips"></div>`;body.appendChild(sec);const refresh=()=>{sec.querySelector("#takeawayChips").innerHTML=tempSelection.takeaway.map((x,i)=>`<span class="chip">${x.custom_name} ${emoji[x.picked_by_role]||""} <button onclick="removeTakeaway(${i})" style="border:0;background:none">×</button></span>`).join("")};sec.querySelector("#addTakeawayBtn").onclick=()=>{const v=sec.querySelector("#takeawayInput").value.trim();if(v){tempSelection.takeaway.push({custom_name:v,picked_by_role:state.member.role});renderPickerBody()}};refresh()}
 }
 window.removeTakeaway=i=>{tempSelection.takeaway.splice(i,1);renderPickerBody()};
@@ -361,11 +388,61 @@ async function savePicker(){
  if(rows.length){const {error}=await sb.from("meal_items").insert(rows);if(error){alert(error.message);return}}
  document.getElementById("pickerModal").classList.remove("show");await loadAll();
 }
+
+let editingDishId=null;
+
+window.openEditDish=function(id){
+ const d=getDish(id); if(!d || !canEdit())return;
+ editingDishId=id;
+ document.getElementById("editDishHeading").textContent=state.lang==="zh"?"编辑菜品":"Edit dish";
+ document.getElementById("editDishNameLabel").textContent=t("dishName");
+ document.getElementById("editDishCategoryLabel").textContent=t("category");
+ document.getElementById("editDishPhotoLabel").textContent=state.lang==="zh"?"更换照片":"Replace photo";
+ document.getElementById("editDishNoteLabel").textContent=t("note");
+ document.getElementById("editQuickLabel").textContent=t("quick");
+ document.getElementById("saveDishEditBtn").textContent=state.lang==="zh"?"保存修改":"Save changes";
+ document.getElementById("hideDishBtn").textContent=d.is_active===false?(state.lang==="zh"?"恢复菜品":"Restore dish"):(state.lang==="zh"?"隐藏菜品":"Hide dish");
+ document.getElementById("editDishName").value=d.name_zh||"";
+ document.getElementById("editDishNote").value=d.note||"";
+ document.getElementById("editDishQuick").checked=!!d.is_quick;
+ const sel=document.getElementById("editDishCategory");sel.innerHTML="";
+ ["breakfast","meat","veg","soup","staple"].forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=t(c);if(c===d.category)o.selected=true;sel.appendChild(o)});
+ document.getElementById("editDishPhoto").value="";
+ document.getElementById("editDishModal").classList.add("show");
+};
+
+async function saveDishEdit(){
+ const d=getDish(editingDishId); if(!d)return;
+ const nm=document.getElementById("editDishName").value.trim()||d.name_zh;
+ const updates={name_zh:nm,name_en:nm,category:document.getElementById("editDishCategory").value,note:document.getElementById("editDishNote").value.trim(),is_quick:document.getElementById("editDishQuick").checked,updated_at:new Date().toISOString()};
+ const file=document.getElementById("editDishPhoto").files[0];
+ if(file){
+   const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+   const image_path=`${state.household.id}/${Date.now()}.${ext}`;
+   const {error:upErr}=await sb.storage.from("dish-photos").upload(image_path,file,{upsert:false});
+   if(upErr){alert(upErr.message);return}
+   updates.image_path=image_path; updates.image_url=null;
+ }
+ const {error}=await sb.from("dishes").update(updates).eq("id",editingDishId).eq("household_id",state.household.id);
+ if(error){alert(error.message);return}
+ document.getElementById("editDishModal").classList.remove("show");
+ await loadAll();
+}
+
+async function toggleDishActive(){
+ const d=getDish(editingDishId); if(!d)return;
+ const next=d.is_active===false;
+ const {error}=await sb.from("dishes").update({is_active:next,updated_at:new Date().toISOString()}).eq("id",editingDishId).eq("household_id",state.household.id);
+ if(error){alert(error.message);return}
+ document.getElementById("editDishModal").classList.remove("show");
+ await loadAll();
+}
+
 async function uploadDish(){
  const name=document.getElementById("newDishName").value.trim();if(!name)return;
  const cat=document.getElementById("newDishCategory").value,file=document.getElementById("newDishPhoto").files[0];let image_path=null;
  if(file){const ext=(file.name.split(".").pop()||"jpg").toLowerCase();image_path=`${state.household.id}/${Date.now()}.${ext}`;const {error}=await sb.storage.from("dish-photos").upload(image_path,file,{upsert:false});if(error){alert(error.message);return}}
- const {error}=await sb.from("dishes").insert({household_id:state.household.id,name_zh:name,name_en:name,category:cat,image_path,note:document.getElementById("newDishNote").value.trim(),is_quick:document.getElementById("newDishQuick").checked,created_by:state.user.id});
+ const {error}=await sb.from("dishes").insert({household_id:state.household.id,name_zh:name,name_en:name,category:cat,image_path,note:document.getElementById("newDishNote").value.trim(),is_quick:document.getElementById("newDishQuick").checked,is_active:true,created_by:state.user.id});
  if(error){alert(error.message);return}
  document.getElementById("addDishModal").classList.remove("show");await loadAll();
 }
@@ -392,6 +469,8 @@ document.getElementById("langBtn").onclick=document.getElementById("settingsLang
 document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));document.getElementById(b.dataset.target).classList.add("active")});
 document.getElementById("addDishFab").onclick=()=>{document.getElementById("addDishHeading").textContent=t("addDish");document.getElementById("dishNameLabel").textContent=t("dishName");document.getElementById("dishCategoryLabel").textContent=t("category");document.getElementById("dishPhotoLabel").textContent=t("photo");document.getElementById("dishNoteLabel").textContent=t("note");document.getElementById("quickLabel").textContent=t("quick");document.getElementById("saveDishBtn").textContent=t("save");const sel=document.getElementById("newDishCategory");sel.innerHTML="";["breakfast","meat","veg","soup","staple"].forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=t(c);sel.appendChild(o)});document.getElementById("addDishModal").classList.add("show")};
 document.getElementById("saveDishBtn").onclick=uploadDish;
+document.getElementById("saveDishEditBtn").onclick=saveDishEdit;
+document.getElementById("hideDishBtn").onclick=toggleDishActive;
 
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 boot();

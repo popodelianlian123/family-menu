@@ -472,7 +472,17 @@ document.getElementById("saveDishBtn").onclick=uploadDish;
 document.getElementById("saveDishEditBtn").onclick=saveDishEdit;
 document.getElementById("hideDishBtn").onclick=toggleDishActive;
 
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=3",{updateViaCache:"none"}).catch(()=>{}));
+
+if ("serviceWorker" in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    location.reload();
+  });
+}
+
 boot();
 </script>
 </body>

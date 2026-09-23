@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff6ee">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="家庭菜单">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>我们家的菜单</title>
+<style>
+:root{--bg1:#fffaf5;--bg2:#ffe9dd;--bg3:#fff3e8;--card:#fffdf9;--text:#2f2925;--muted:#a0958c;--line:#eadfd7;--accent:#f49a70;--accent2:#ffd6c2;--shadow:0 10px 30px rgba(121,76,51,.06)}
+*{box-sizing:border-box} html,body{margin:0;background:linear-gradient(145deg,var(--bg1),var(--bg2) 52%,var(--bg3));color:var(--text);min-height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","SF Pro Display","PingFang SC","Noto Sans SC","Roboto",sans-serif}
+button,input,select{font:inherit} button{cursor:pointer}
+.app{max-width:760px;margin:auto;padding-bottom:96px}
+.header{padding:calc(env(safe-area-inset-top) + 18px) 18px 14px;position:sticky;top:0;z-index:20;background:rgba(255,249,244,.9);backdrop-filter:blur(18px);border-bottom:1px solid rgba(234,223,215,.72)}
+.header-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.title{font-size:25px;font-weight:800} .date{margin-top:4px;color:#8f847b;font-size:14px}
+.lang,.mini{border:1px solid var(--line);background:#fff;border-radius:14px;padding:8px 11px;color:#5b5049}
+.roles{display:flex;gap:8px;margin-top:14px}
+.role{flex:1;border:1px solid var(--line);background:rgba(255,255,255,.72);border-radius:18px;padding:10px 8px;text-align:center;font-size:14px}
+.role.active{background:linear-gradient(135deg,#ffe3d5,#ffd0ba);border-color:#ffd0ba;color:#a65331;font-weight:700}
+main{padding:16px} .panel{display:none} .panel.active{display:block}
+.section{background:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.86);box-shadow:var(--shadow);border-radius:24px;padding:15px;margin-bottom:14px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px} .section-head h2{margin:0;font-size:19px}
+.text-btn{border:0;background:transparent;color:#b96e4d;font-weight:700;padding:4px 0}
+.breakfast-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.food-card{background:#fff;border:1px solid var(--line);border-radius:17px;overflow:hidden;min-width:0;box-shadow:0 5px 15px rgba(95,60,40,.04)}
+.food-card img{width:100%;aspect-ratio:1.25/1;object-fit:cover;display:block;background:#f2ebe5}
+.food-info{padding:8px 9px 9px} .food-name{font-weight:700;font-size:14px} .food-meta{margin-top:4px;color:#c4b9b0;font-size:11px;min-height:15px}
+.dinner-row{border-radius:18px;padding:11px;margin-top:10px;border:1px solid rgba(235,223,213,.7)} .dinner-row.meat{background:#fff4ef} .dinner-row.veg{background:#f4f9f1} .dinner-row.soup{background:#fff9e9} .dinner-row.staple{background:#fff5ef} .dinner-row.takeaway{background:#f8f3ff}
+.row-title{font-size:15px;font-weight:800;margin-bottom:8px} .row-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px} .row-grid.single{grid-template-columns:1fr}
+.compact{display:grid;grid-template-columns:110px 1fr;align-items:center} .compact img{height:88px;aspect-ratio:auto}
+.empty{font-size:13px;color:var(--muted);padding:10px 0}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,251,247,.95);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+.nav-inner{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.nav-btn{border:0;background:transparent;border-radius:14px;padding:8px 5px;color:#8c8178;font-size:12px} .nav-btn span{display:block;font-size:21px} .nav-btn.active{color:#ed7d4d;background:#fff}
+.library-tabs{display:flex;gap:7px;overflow:auto;margin-bottom:11px} .library-tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;white-space:nowrap} .library-tabs button.active{background:#ffe0d0;color:#9b5737}
+.library-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px} .library-card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden} .library-card img{width:100%;aspect-ratio:1.2/1;object-fit:cover} .library-card .body{padding:9px}
+.badge{font-size:10px;color:#a78f80;background:#fff0e7;padding:3px 6px;border-radius:999px;display:inline-block;margin-top:5px}
+.fab{position:fixed;right:18px;bottom:88px;width:56px;height:56px;border:0;border-radius:50%;background:linear-gradient(135deg,#ef8e62,#f6b08b);color:#fff;font-size:30px;box-shadow:0 10px 24px rgba(195,104,61,.26)}
+.history-card,.setting-row{background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px;margin-bottom:10px} .history-date{font-weight:800;margin-bottom:7px} .history-line{font-size:13px;color:#71675f;margin-top:4px}
+.setting-row{display:flex;justify-content:space-between;align-items:center;gap:10px} .setting-row input{width:20px;height:20px} .subtle{font-size:12px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(45,32,25,.38);z-index:100;display:none;align-items:flex-end} .modal.show{display:flex}
+.sheet{width:100%;max-height:92vh;overflow:auto;background:linear-gradient(160deg,#fffaf6,#fff3e9);border-radius:28px 28px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet-inner{max-width:720px;margin:auto} .sheet h3{margin:0 0 4px;font-size:21px} .sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+.pick-section{margin-top:15px} .pick-section h4{font-size:15px;margin:0 0 8px} .pick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.pick-card{position:relative;border:2px solid transparent;border-radius:16px;overflow:hidden;background:#fff;text-align:left;padding:0} .pick-card.selected{border-color:#f49a70} .pick-card img{width:100%;aspect-ratio:1.25/1;object-fit:cover}
+.pick-card .body{padding:8px} .check{display:none;position:absolute;right:7px;top:7px;width:24px;height:24px;border-radius:50%;background:#f49a70;color:#fff;place-items:center;font-size:15px;font-weight:800} .pick-card.selected .check{display:grid}
+input,select{width:100%;border:1px solid var(--line);border-radius:14px;background:#fff;padding:11px;color:var(--text)} label.field{display:block;margin-top:11px} label.field>span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.primary,.secondary{width:100%;border:0;border-radius:16px;padding:13px 14px;font-weight:800;margin-top:10px} .primary{background:linear-gradient(135deg,#ef9369,#f7b28d);color:#fff} .secondary{background:#f3eae4;color:#5d5149}
+.input-row{display:flex;gap:8px} .input-row input{flex:1} .chip{display:inline-flex;gap:6px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 10px;margin:6px 6px 0 0;font-size:12px}
+.onboard{padding:22px 16px} .onboard .card{max-width:520px;margin:8vh auto 0;background:#fff;border-radius:26px;padding:20px;box-shadow:var(--shadow)} .onboard h2{margin-top:0}
+.tabs2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px} .tabs2 button{border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px} .tabs2 button.active{background:#ffe1d2;color:#9d5434}
+.error{color:#b24c40;font-size:12px;margin-top:8px} .loading{padding:40px;text-align:center;color:var(--muted)}
+@media(min-width:680px){.breakfast-grid{grid-template-columns:repeat(4,1fr)} .library-grid{grid-template-columns:repeat(3,1fr)} .pick-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div id="loading" class="loading">正在连接家庭菜单…</div>
+
+<div id="onboarding" class="onboard" style="display:none">
+  <div class="card">
+    <h2>🍚 家庭菜单</h2>
+    <div class="subtle" style="margin-bottom:14px">第一次使用：创建家庭，或用家庭邀请码加入。</div>
+    <div class="tabs2">
+      <button id="tabCreate" class="active">创建家庭</button>
+      <button id="tabJoin">加入家庭</button>
+    </div>
+    <div id="createBox">
+      <label class="field"><span>家庭名称</span><input id="familyName" value="我们家"></label>
+      <label class="field"><span>家庭邀请码（4–20位，例如 HOME2026）</span><input id="createCode" placeholder="HOME2026"></label>
+      <button class="primary" id="createFamilyBtn">创建</button>
+    </div>
+    <div id="joinBox" style="display:none">
+      <label class="field"><span>家庭邀请码</span><input id="joinCode" placeholder="HOME2026"></label>
+      <label class="field"><span>你的身份</span>
+        <select id="joinRole"><option value="husband">🙋🏻‍♂️ 老公</option><option value="helper">👩🏻‍🍳 女佣</option><option value="me">🙋🏻‍♀️ 我</option></select>
+      </label>
+      <button class="primary" id="joinFamilyBtn">加入</button>
+    </div>
+    <div class="error" id="onboardError"></div>
+  </div>
+</div>
+
+<div id="mainApp" class="app" style="display:none">
+<header class="header">
+  <div class="header-top">
+    <div><div class="title" id="appTitle">我们家的菜单</div><div class="date" id="todayDate"></div></div>
+    <button class="lang" id="langBtn">EN</button>
+  </div>
+  <div class="roles"><button class="role" id="currentRoleBtn"></button></div>
+</header>
+
+<main>
+<section class="panel active" id="menuPanel">
+  <div class="section">
+    <div class="section-head"><h2 id="breakfastHeading">☀️ 今天早餐</h2><button class="text-btn editMeal" data-meal="breakfast">选择 / 修改</button></div>
+    <div class="breakfast-grid" id="breakfastCards"></div>
+  </div>
+  <div class="section">
+    <div class="section-head"><h2 id="dinnerHeading">🌙 今天晚餐</h2><button class="text-btn editMeal" data-meal="dinner">选择 / 修改</button></div>
+    <div class="dinner-row meat"><div class="row-title" data-i18n="meat">荤菜</div><div class="row-grid" id="meatRow"></div></div>
+    <div class="dinner-row veg"><div class="row-title" data-i18n="veg">素菜</div><div class="row-grid" id="vegRow"></div></div>
+    <div class="dinner-row soup"><div class="row-title" data-i18n="soup">汤</div><div class="row-grid single" id="soupRow"></div></div>
+    <div class="dinner-row staple"><div class="row-title" data-i18n="staple">主食</div><div class="row-grid single" id="stapleRow"></div></div>
+    <div class="dinner-row takeaway" id="takeawayWrap" style="display:none"><div class="row-title" data-i18n="takeaway">外卖</div><div class="row-grid single" id="takeawayRow"></div></div>
+  </div>
+</section>
+
+<section class="panel" id="libraryPanel">
+  <div class="section"><div class="section-head"><h2 id="libraryHeading">菜库</h2></div><div class="library-tabs" id="libraryTabs"></div><div class="library-grid" id="libraryGrid"></div></div>
+  <button class="fab" id="addDishFab">＋</button>
+</section>
+
+<section class="panel" id="historyPanel">
+  <div class="section"><div class="section-head"><h2 id="historyHeading">历史</h2></div><div class="subtle" id="historyNote">至少保存6个月</div><div id="historyList" style="margin-top:12px"></div></div>
+</section>
+
+<section class="panel" id="settingsPanel">
+  <div class="section"><div class="section-head"><h2 id="settingsHeading">设置</h2></div>
+    <div class="setting-row"><div><strong id="familyInfoName"></strong><div class="subtle" id="familyInfoRole"></div></div></div>
+    <div class="setting-row"><div><strong id="languageLabel">语言</strong><div class="subtle">中文 / English</div></div><button class="lang" id="settingsLangBtn">EN</button></div>
+    <div id="cookDaySettings"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<div id="bottomNav" class="bottom-nav" style="display:none"><div class="nav-inner">
+<button class="nav-btn active" data-target="menuPanel"><span>🍽️</span><b data-i18n="menu">菜单</b></button>
+<button class="nav-btn" data-target="libraryPanel"><span>🗂️</span><b data-i18n="library">菜库</b></button>
+<button class="nav-btn" data-target="historyPanel"><span>🕘</span><b data-i18n="history">历史</b></button>
+<button class="nav-btn" data-target="settingsPanel"><span>⚙️</span><b data-i18n="settings">设置</b></button>
+</div></div>
+
+<div class="modal" id="pickerModal"><div class="sheet"><div class="sheet-inner">
+<h3 id="pickerTitle"></h3><div class="sub" id="pickerSub"></div><div id="pickerBody"></div>
+<button class="primary" id="savePickerBtn">保存</button><button class="secondary closeModal">取消</button>
+</div></div></div>
+
+<div class="modal" id="addDishModal"><div class="sheet"><div class="sheet-inner">
+<h3 id="addDishHeading">添加菜品</h3>
+<label class="field"><span id="dishNameLabel">菜名</span><input id="newDishName"></label>
+<label class="field"><span id="dishCategoryLabel">分类</span><select id="newDishCategory"></select></label>
+<label class="field"><span id="dishPhotoLabel">照片</span><input id="newDishPhoto" type="file" accept="image/*" capture="environment"></label>
+<label class="field"><span id="dishNoteLabel">备注</span><input id="newDishNote"></label>
+<label class="setting-row" style="margin-top:12px"><span id="quickLabel">加入快捷备用选项</span><input type="checkbox" id="newDishQuick" checked></label>
+<button class="primary" id="saveDishBtn">保存</button><button class="secondary closeModal">取消</button>
+</div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://lhkjetbnfciggfzgwptb.supabase.co";
+const SUPABASE_KEY="sb_publishable_SxwaBBT90NfsW_PqcD0rtg_XwTw8hkI";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const T={
+zh:{menu:"菜单",library:"菜库",history:"历史",settings:"设置",breakfast:"早餐",dinner:"晚餐",meat:"荤菜",veg:"素菜",soup:"汤",staple:"主食",takeaway:"外卖",choose:"选择 / 修改",save:"保存",cancel:"取消",today:"今天",addTakeaway:"添加外卖",takeawayPH:"输入外卖菜名",addDish:"添加菜品",dishName:"菜名",category:"分类",photo:"照片",note:"备注",quick:"加入快捷备用选项",language:"语言",historyNote:"保存至少6个月",rest:"休息",none:"还没有安排"},
+en:{menu:"Menu",library:"Library",history:"History",settings:"Settings",breakfast:"Breakfast",dinner:"Dinner",meat:"Meat",veg:"Vegetables",soup:"Soup",staple:"Staple",takeaway:"Takeaway",choose:"Choose / Edit",save:"Save",cancel:"Cancel",today:"Today",addTakeaway:"Add takeaway",takeawayPH:"Enter takeaway item",addDish:"Add dish",dishName:"Dish name",category:"Category",photo:"Photo",note:"Note",quick:"Quick option",language:"Language",historyNote:"Keeps at least 6 months",rest:"Rest",none:"Not planned"}
+};
+const emoji={me:"🙋🏻‍♀️",husband:"🙋🏻‍♂️",helper:"👩🏻‍🍳"};
+const roleNames={zh:{me:"我",husband:"老公",helper:"女佣"},en:{me:"Me",husband:"Husband",helper:"Helper"}};
+const demoImages={
+ egg_fried:"https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=700&q=80",
+ blueberry:"https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=700&q=80",
+ nuts:"https://images.unsplash.com/photo-1599599810769-bcde5a160d32?auto=format&fit=crop&w=700&q=80",
+ bread:"https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=700&q=80",
+ fish:"https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=700&q=80",
+ ribs:"https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=700&q=80",
+ broccoli:"https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=700&q=80",
+ soup:"https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=700&q=80",
+ rice:"https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=700&q=80"
+};
+const defaultDishes=[
+["煎鸡蛋","Fried egg","breakfast","egg_fried"],["蛋羹","Steamed egg custard","breakfast","egg_fried"],["煮鸡蛋","Boiled egg","breakfast","egg_fried"],
+["蓝莓","Blueberries","breakfast","blueberry"],["坚果","Nuts","breakfast","nuts"],["面包","Bread","breakfast","bread"],["燕麦","Oats","breakfast","bread"],["牛奶","Milk","breakfast","bread"],["橙子","Orange","breakfast","blueberry"],["苹果","Apple","breakfast","blueberry"],["其他水果","Other fruit","breakfast","blueberry"],
+["清蒸鱼","Steamed fish","meat","fish"],["蒸排骨","Steamed ribs","meat","ribs"],["咖喱鸡","Curry chicken","meat","ribs"],["黑椒牛肉","Black pepper beef","meat","ribs"],
+["西兰花","Broccoli","veg","broccoli"],["菜心","Choy sum","veg","broccoli"],["豆腐","Tofu","veg","broccoli"],["番茄炒蛋","Tomato egg","veg","broccoli"],
+["玉米排骨汤","Corn rib soup","soup","soup"],["冬瓜汤","Winter melon soup","soup","soup"],
+["白米饭","White rice","staple","rice"],["糙米饭","Brown rice","staple","rice"],["面条","Noodles","staple","rice"],["饺子","Dumplings","staple","rice"],["馒头","Mantou","staple","rice"],["煎饼","Pancake","staple","rice"]
+];
+
+let state={
+ lang:localStorage.getItem("fm_lang")||"zh",
+ user:null,household:null,member:null,dishes:[],items:[],settings:null,libraryCat:"breakfast"
+};
+let pickerType=null,tempSelection=null,channel=null;
+const today=new Date(); const todayKey=today.toISOString().slice(0,10);
+const t=k=>T[state.lang][k]||k; const dishName=d=>state.lang==="zh"?d.name_zh:(d.name_en||d.name_zh);
+const canEdit=()=>state.member && ["me","husband"].includes(state.member.role);
+
+function dateRangeForHistory(){
+ const end=new Date(); const start=new Date(); start.setMonth(start.getMonth()-6);
+ return [start.toISOString().slice(0,10),end.toISOString().slice(0,10)];
+}
+function weekRange(){
+ const mon=new Date(today); const dow=mon.getDay(); mon.setDate(mon.getDate()+(dow===0?-6:1-dow)); mon.setHours(0,0,0,0);
+ const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+ return [mon.toISOString().slice(0,10),sun.toISOString().slice(0,10)];
+}
+async function ensureAuth(){
+ const {data:{session}}=await sb.auth.getSession();
+ if(session){state.user=session.user;return}
+ const {data,error}=await sb.auth.signInAnonymously();
+ if(error) throw error;
+ state.user=data.user;
+}
+async function findMembership(){
+ const {data,error}=await sb.from("household_members")
+   .select("household_id,role,households(id,name,join_code)")
+   .eq("user_id",state.user.id).limit(1);
+ if(error) throw error;
+ if(data && data.length){
+   state.member={household_id:data[0].household_id,role:data[0].role};
+   state.household=data[0].households;
+   return true;
+ }
+ return false;
+}
+async function seedDishesIfEmpty(){
+ const {count,error}=await sb.from("dishes").select("*",{count:"exact",head:true}).eq("household_id",state.household.id);
+ if(error) throw error;
+ if(count>0)return;
+ const rows=defaultDishes.map(x=>({
+   household_id:state.household.id,name_zh:x[0],name_en:x[1],category:x[2],
+   image_url:demoImages[x[3]],is_quick:true,created_by:state.user.id
+ }));
+ const {error:e}=await sb.from("dishes").insert(rows);
+ if(e) throw e;
+}
+async function signedDishImages(rows){
+ return await Promise.all(rows.map(async d=>{
+   d._src=d.image_url||"";
+   if(d.image_path){
+     const {data}=await sb.storage.from("dish-photos").createSignedUrl(d.image_path,3600);
+     if(data?.signedUrl)d._src=data.signedUrl;
+   }
+   return d;
+ }));
+}
+async function loadAll(){
+ const [histStart,histEnd]=dateRangeForHistory();
+ const [dishesRes,itemsRes,setRes]=await Promise.all([
+   sb.from("dishes").select("*").eq("household_id",state.household.id).order("created_at"),
+   sb.from("meal_items").select("*").eq("household_id",state.household.id).gte("meal_date",histStart).lte("meal_date",histEnd).order("created_at"),
+   sb.from("household_settings").select("*").eq("household_id",state.household.id).single()
+ ]);
+ if(dishesRes.error)throw dishesRes.error;if(itemsRes.error)throw itemsRes.error;if(setRes.error)throw setRes.error;
+ state.dishes=await signedDishImages(dishesRes.data||[]);
+ state.items=itemsRes.data||[]; state.settings=setRes.data;
+ renderAll();
+}
+function subscribeRealtime(){
+ if(channel)sb.removeChannel(channel);
+ channel=sb.channel("family-"+state.household.id)
+ .on("postgres_changes",{event:"*",schema:"public",table:"dishes",filter:`household_id=eq.${state.household.id}`},loadAll)
+ .on("postgres_changes",{event:"*",schema:"public",table:"meal_items",filter:`household_id=eq.${state.household.id}`},loadAll)
+ .on("postgres_changes",{event:"*",schema:"public",table:"household_settings",filter:`household_id=eq.${state.household.id}`},loadAll)
+ .subscribe();
+}
+function getDish(id){return state.dishes.find(d=>d.id===id)}
+function itemsFor(date,meal,category){return state.items.filter(x=>x.meal_date===date&&x.meal_type===meal&&x.category===category)}
+function weeklyCount(dishId,category){
+ const [a,b]=weekRange();return state.items.filter(x=>x.dish_id===dishId&&x.category===category&&x.meal_date>=a&&x.meal_date<=b).length;
+}
+function roleMeta(item,cat){
+ const e=emoji[item.picked_by_role]||"";
+ if(["meat","veg"].includes(cat)) return `${e} · ${state.lang==="zh"?"本周第":"#"}${weeklyCount(item.dish_id,cat)}${state.lang==="zh"?"次":" this week"}`;
+ return e;
+}
+function foodCard(item,cat,compact=false){
+ const d=getDish(item.dish_id); if(!d)return "";
+ return `<div class="food-card ${compact?"compact":""}"><img src="${d._src||d.image_url||""}" alt=""><div class="food-info"><div class="food-name">${dishName(d)}</div><div class="food-meta">${roleMeta(item,cat)}</div></div></div>`;
+}
+function renderHeader(){
+ document.getElementById("appTitle").textContent=state.lang==="zh"?"我们家的菜单":"Family Menu";
+ document.getElementById("todayDate").textContent=(state.lang==="zh"?"今天 · ":"Today · ")+today.toLocaleDateString(state.lang==="zh"?"zh-CN":"en-SG",{weekday:"long",month:"long",day:"numeric"});
+ document.getElementById("langBtn").textContent=state.lang==="zh"?"EN":"中";document.getElementById("settingsLangBtn").textContent=state.lang==="zh"?"EN":"中";
+ document.getElementById("currentRoleBtn").textContent=`${emoji[state.member.role]} ${roleNames[state.lang][state.member.role]}`;
+ document.getElementById("currentRoleBtn").classList.add("active");
+}
+function renderToday(){
+ const schedule=state.settings.cook_days; const idx=(today.getDay()===0?6:today.getDay()-1); const day=schedule[idx];
+ const b=itemsFor(todayKey,"breakfast","breakfast"); document.getElementById("breakfastCards").innerHTML=!day.breakfast?`<div class="empty">${t("rest")}</div>`:(b.length?b.map(x=>foodCard(x,"breakfast")).join(""):`<div class="empty">${t("none")}</div>`);
+ for(const cat of ["meat","veg","soup","staple"]){
+   const arr=itemsFor(todayKey,"dinner",cat);
+   document.getElementById(cat+"Row").innerHTML=!day.dinner?`<div class="empty">${t("rest")}</div>`:(arr.length?arr.map(x=>foodCard(x,cat,true)).join(""):`<div class="empty">${t("none")}</div>`);
+ }
+ const ta=itemsFor(todayKey,"dinner","takeaway"),wrap=document.getElementById("takeawayWrap");
+ wrap.style.display=ta.length?"block":"none";
+ document.getElementById("takeawayRow").innerHTML=ta.map(x=>`<div class="food-card compact"><div class="food-info"><div class="food-name">🥡 ${x.custom_name}</div><div class="food-meta">${emoji[x.picked_by_role]||""}</div></div></div>`).join("");
+ document.querySelectorAll(".editMeal").forEach(b=>b.style.display=canEdit()?"block":"none");
+}
+function renderI18n(){
+ document.querySelectorAll("[data-i18n]").forEach(el=>el.textContent=t(el.dataset.i18n));
+ document.getElementById("breakfastHeading").textContent=`☀️ ${state.lang==="zh"?"今天早餐":"Today's Breakfast"}`;
+ document.getElementById("dinnerHeading").textContent=`🌙 ${state.lang==="zh"?"今天晚餐":"Today's Dinner"}`;
+ document.querySelectorAll(".editMeal").forEach(b=>b.textContent=t("choose"));
+ document.getElementById("libraryHeading").textContent=t("library");document.getElementById("historyHeading").textContent=t("history");document.getElementById("settingsHeading").textContent=t("settings");document.getElementById("languageLabel").textContent=t("language");document.getElementById("historyNote").textContent=t("historyNote");
+ document.querySelectorAll(".closeModal").forEach(b=>b.textContent=t("cancel"));
+}
+function renderLibrary(){
+ const cats=["breakfast","meat","veg","soup","staple"],tabs=document.getElementById("libraryTabs");tabs.innerHTML="";
+ cats.forEach(c=>{const btn=document.createElement("button");btn.textContent=t(c);btn.className=state.libraryCat===c?"active":"";btn.onclick=()=>{state.libraryCat=c;renderLibrary()};tabs.appendChild(btn)});
+ const g=document.getElementById("libraryGrid");g.innerHTML="";
+ state.dishes.filter(d=>d.category===state.libraryCat).forEach(d=>{const el=document.createElement("div");el.className="library-card";el.innerHTML=`<img src="${d._src||d.image_url||""}"><div class="body"><strong>${dishName(d)}</strong>${d.is_quick?`<div class="badge">${state.lang==="zh"?"快捷备用":"Quick"}</div>`:""}</div>`;g.appendChild(el)});
+ document.getElementById("addDishFab").style.display=canEdit()?"block":"none";
+}
+function renderHistory(){
+ const list=document.getElementById("historyList");list.innerHTML="";
+ const byDate={};state.items.forEach(x=>(byDate[x.meal_date]??=[]).push(x));
+ Object.keys(byDate).sort().reverse().forEach(k=>{const d=new Date(k+"T00:00:00"),rows=byDate[k];
+   const names=(meal)=>rows.filter(x=>x.meal_type===meal).map(x=>x.category==="takeaway"?x.custom_name:dishName(getDish(x.dish_id))).join("、");
+   const el=document.createElement("div");el.className="history-card";el.innerHTML=`<div class="history-date">${d.toLocaleDateString(state.lang==="zh"?"zh-CN":"en-SG",{year:"numeric",month:"short",day:"numeric",weekday:"short"})}</div><div class="history-line">${t("breakfast")}: ${names("breakfast")||"—"}</div><div class="history-line">${t("dinner")}: ${names("dinner")||"—"}</div>`;list.appendChild(el);
+ });
+ if(!Object.keys(byDate).length)list.innerHTML=`<div class="empty">${t("none")}</div>`;
+}
+function renderSettings(){
+ document.getElementById("familyInfoName").textContent=state.household.name;
+ document.getElementById("familyInfoRole").textContent=`${emoji[state.member.role]} ${roleNames[state.lang][state.member.role]}`;
+ const box=document.getElementById("cookDaySettings");box.innerHTML="";
+ const monday=new Date(today);const dw=monday.getDay();monday.setDate(monday.getDate()+(dw===0?-6:1-dw));
+ state.settings.cook_days.forEach((s,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);const row=document.createElement("div");row.className="setting-row";row.innerHTML=`<div><strong>${d.toLocaleDateString(state.lang==="zh"?"zh-CN":"en-SG",{weekday:"long"})}</strong><div class="subtle">${d.toLocaleDateString(state.lang==="zh"?"zh-CN":"en-SG",{month:"short",day:"numeric"})}</div></div><div style="display:flex;gap:10px"><label>${t("breakfast")} <input type="checkbox" data-i="${i}" data-m="breakfast" ${s.breakfast?"checked":""} ${canEdit()?"":"disabled"}></label><label>${t("dinner")} <input type="checkbox" data-i="${i}" data-m="dinner" ${s.dinner?"checked":""} ${canEdit()?"":"disabled"}></label></div>`;box.appendChild(row)});
+ box.querySelectorAll("input").forEach(inp=>inp.onchange=async e=>{const days=JSON.parse(JSON.stringify(state.settings.cook_days));days[+e.target.dataset.i][e.target.dataset.m]=e.target.checked;const {error}=await sb.from("household_settings").update({cook_days:days,updated_at:new Date().toISOString()}).eq("household_id",state.household.id);if(error)alert(error.message)});
+}
+function renderAll(){renderHeader();renderI18n();renderToday();renderLibrary();renderHistory();renderSettings()}
+
+function openPicker(type){
+ pickerType=type;
+ if(type==="breakfast") tempSelection=itemsFor(todayKey,"breakfast","breakfast").map(x=>({dish_id:x.dish_id,picked_by_role:x.picked_by_role}));
+ else {
+   tempSelection={};["meat","veg","soup","staple","takeaway"].forEach(c=>tempSelection[c]=itemsFor(todayKey,"dinner",c).map(x=>({dish_id:x.dish_id,custom_name:x.custom_name,picked_by_role:x.picked_by_role})));
+ }
+ document.getElementById("pickerTitle").textContent=type==="breakfast"?(state.lang==="zh"?"选择早餐":"Choose Breakfast"):(state.lang==="zh"?"选择晚餐":"Choose Dinner");
+ document.getElementById("pickerSub").textContent=document.getElementById("todayDate").textContent;renderPickerBody();document.getElementById("savePickerBtn").textContent=t("save");document.getElementById("pickerModal").classList.add("show");
+}
+function selectionArray(cat){return pickerType==="breakfast"?tempSelection:tempSelection[cat]}
+function selected(cat,id){return selectionArray(cat).some(x=>x.dish_id===id)}
+function togglePick(cat,id){const arr=selectionArray(cat),ix=arr.findIndex(x=>x.dish_id===id);if(ix>=0)arr.splice(ix,1);else arr.push({dish_id:id,picked_by_role:state.member.role});renderPickerBody()}
+function renderPickerBody(){
+ const body=document.getElementById("pickerBody");body.innerHTML="";const sections=pickerType==="breakfast"?["breakfast"]:["meat","veg","soup","staple"];
+ sections.forEach(cat=>{const sec=document.createElement("div");sec.className="pick-section";sec.innerHTML=`<h4>${t(cat)}</h4><div class="pick-grid"></div>`;const grid=sec.querySelector(".pick-grid");state.dishes.filter(d=>d.category===cat&&d.is_quick).forEach(d=>{const btn=document.createElement("button");btn.className="pick-card"+(selected(cat,d.id)?" selected":"");btn.innerHTML=`<span class="check">✓</span><img src="${d._src||d.image_url||""}"><div class="body"><strong>${dishName(d)}</strong><div class="food-meta">${["meat","veg"].includes(cat)?`${state.lang==="zh"?"本周第":"#"}${weeklyCount(d.id,cat)}${state.lang==="zh"?"次":" this week"}`:""}</div></div>`;btn.onclick=()=>togglePick(cat,d.id);grid.appendChild(btn)});body.appendChild(sec)});
+ if(pickerType==="dinner"){const sec=document.createElement("div");sec.className="pick-section";sec.innerHTML=`<h4>🥡 ${t("takeaway")}</h4><div class="input-row"><input id="takeawayInput" placeholder="${t("takeawayPH")}"><button class="mini" id="addTakeawayBtn">${t("addTakeaway")}</button></div><div id="takeawayChips"></div>`;body.appendChild(sec);const refresh=()=>{sec.querySelector("#takeawayChips").innerHTML=tempSelection.takeaway.map((x,i)=>`<span class="chip">${x.custom_name} ${emoji[x.picked_by_role]||""} <button onclick="removeTakeaway(${i})" style="border:0;background:none">×</button></span>`).join("")};sec.querySelector("#addTakeawayBtn").onclick=()=>{const v=sec.querySelector("#takeawayInput").value.trim();if(v){tempSelection.takeaway.push({custom_name:v,picked_by_role:state.member.role});renderPickerBody()}};refresh()}
+}
+window.removeTakeaway=i=>{tempSelection.takeaway.splice(i,1);renderPickerBody()};
+
+async function savePicker(){
+ const meal=pickerType; const role=state.member.role;
+ const {error:delErr}=await sb.from("meal_items").delete().eq("household_id",state.household.id).eq("meal_date",todayKey).eq("meal_type",meal);
+ if(delErr){alert(delErr.message);return}
+ let rows=[];
+ if(meal==="breakfast") rows=tempSelection.map(x=>({household_id:state.household.id,meal_date:todayKey,meal_type:"breakfast",category:"breakfast",dish_id:x.dish_id,picked_by_user_id:state.user.id,picked_by_role:x.picked_by_role||role}));
+ else {
+  for(const cat of ["meat","veg","soup","staple"]) rows.push(...tempSelection[cat].map(x=>({household_id:state.household.id,meal_date:todayKey,meal_type:"dinner",category:cat,dish_id:x.dish_id,picked_by_user_id:state.user.id,picked_by_role:x.picked_by_role||role})));
+  rows.push(...tempSelection.takeaway.map(x=>({household_id:state.household.id,meal_date:todayKey,meal_type:"dinner",category:"takeaway",custom_name:x.custom_name,picked_by_user_id:state.user.id,picked_by_role:x.picked_by_role||role})));
+ }
+ if(rows.length){const {error}=await sb.from("meal_items").insert(rows);if(error){alert(error.message);return}}
+ document.getElementById("pickerModal").classList.remove("show");await loadAll();
+}
+async function uploadDish(){
+ const name=document.getElementById("newDishName").value.trim();if(!name)return;
+ const cat=document.getElementById("newDishCategory").value,file=document.getElementById("newDishPhoto").files[0];let image_path=null;
+ if(file){const ext=(file.name.split(".").pop()||"jpg").toLowerCase();image_path=`${state.household.id}/${Date.now()}.${ext}`;const {error}=await sb.storage.from("dish-photos").upload(image_path,file,{upsert:false});if(error){alert(error.message);return}}
+ const {error}=await sb.from("dishes").insert({household_id:state.household.id,name_zh:name,name_en:name,category:cat,image_path,note:document.getElementById("newDishNote").value.trim(),is_quick:document.getElementById("newDishQuick").checked,created_by:state.user.id});
+ if(error){alert(error.message);return}
+ document.getElementById("addDishModal").classList.remove("show");await loadAll();
+}
+
+document.getElementById("tabCreate").onclick=()=>{document.getElementById("createBox").style.display="block";document.getElementById("joinBox").style.display="none";document.getElementById("tabCreate").classList.add("active");document.getElementById("tabJoin").classList.remove("active")};
+document.getElementById("tabJoin").onclick=()=>{document.getElementById("createBox").style.display="none";document.getElementById("joinBox").style.display="block";document.getElementById("tabJoin").classList.add("active");document.getElementById("tabCreate").classList.remove("active")};
+document.getElementById("createFamilyBtn").onclick=async()=>{try{document.getElementById("onboardError").textContent="";const name=document.getElementById("familyName").value.trim(),code=document.getElementById("createCode").value.trim();const {data,error}=await sb.rpc("create_household",{p_name:name,p_join_code:code,p_role:"me"});if(error)throw error;await bootAfterMembership()}catch(e){document.getElementById("onboardError").textContent=e.message}};
+document.getElementById("joinFamilyBtn").onclick=async()=>{try{document.getElementById("onboardError").textContent="";const code=document.getElementById("joinCode").value.trim(),role=document.getElementById("joinRole").value;const {data,error}=await sb.rpc("join_household",{p_join_code:code,p_role:role});if(error)throw error;await bootAfterMembership()}catch(e){document.getElementById("onboardError").textContent=e.message}};
+
+async function bootAfterMembership(){
+ await findMembership();await seedDishesIfEmpty();await loadAll();subscribeRealtime();
+ document.getElementById("loading").style.display="none";document.getElementById("onboarding").style.display="none";document.getElementById("mainApp").style.display="block";document.getElementById("bottomNav").style.display="block";
+}
+async function boot(){
+ try{await ensureAuth();if(await findMembership())await bootAfterMembership();else{document.getElementById("loading").style.display="none";document.getElementById("onboarding").style.display="block"}}
+ catch(e){document.getElementById("loading").textContent="连接失败："+e.message}
+}
+
+document.querySelectorAll(".editMeal").forEach(b=>b.onclick=()=>openPicker(b.dataset.meal));
+document.getElementById("savePickerBtn").onclick=savePicker;
+document.querySelectorAll(".closeModal").forEach(b=>b.onclick=()=>b.closest(".modal").classList.remove("show"));
+document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("show")}));
+document.getElementById("langBtn").onclick=document.getElementById("settingsLangBtn").onclick=()=>{state.lang=state.lang==="zh"?"en":"zh";localStorage.setItem("fm_lang",state.lang);renderAll()};
+document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));document.getElementById(b.dataset.target).classList.add("active")});
+document.getElementById("addDishFab").onclick=()=>{document.getElementById("addDishHeading").textContent=t("addDish");document.getElementById("dishNameLabel").textContent=t("dishName");document.getElementById("dishCategoryLabel").textContent=t("category");document.getElementById("dishPhotoLabel").textContent=t("photo");document.getElementById("dishNoteLabel").textContent=t("note");document.getElementById("quickLabel").textContent=t("quick");document.getElementById("saveDishBtn").textContent=t("save");const sel=document.getElementById("newDishCategory");sel.innerHTML="";["breakfast","meat","veg","soup","staple"].forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=t(c);sel.appendChild(o)});document.getElementById("addDishModal").classList.add("show")};
+document.getElementById("saveDishBtn").onclick=uploadDish;
+
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+boot();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-const CACHE = 'family-menu-v6';
+const CACHE = 'family-menu-v8';
 const STATIC_ASSETS = [
   './manifest.webmanifest',
   './icon-192.png',
@@ -23,11 +23,18 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const req = event.request;
-
   if (req.method !== 'GET') return;
 
-  // Always prefer the network for page navigations / index.html.
-  if (req.mode === 'navigate' || new URL(req.url).pathname.endsWith('/index.html')) {
+  const url = new URL(req.url);
+
+  // CRITICAL: never cache Supabase or any other cross-origin API/data request.
+  if (url.origin !== self.location.origin) {
+    event.respondWith(fetch(req));
+    return;
+  }
+
+  // Always fetch the app shell from network first.
+  if (req.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname === '/') {
     event.respondWith(
       fetch(req, { cache: 'no-store' })
         .catch(() => caches.match('./index.html'))
@@ -35,7 +42,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Static assets: cache first, refresh in background.
+  // Cache only our own same-origin static files.
   event.respondWith(
     caches.match(req).then(cached => {
       const fresh = fetch(req).then(response => {

@@ -514,6 +514,7 @@ async function logout(){
  if(!confirm(msg)) return;
  try{
    if(channel){ try{await sb.removeChannel(channel)}catch(_e){} channel=null; }
+   if(syncTimer){clearInterval(syncTimer);syncTimer=null;}
    const {error}=await sb.auth.signOut();
    if(error) throw error;
    state.user=null;state.household=null;state.member=null;state.dishes=[];state.items=[];state.settings=null;
@@ -524,9 +525,36 @@ async function logout(){
 }
 
 async function bootAfterMembership(){
- await findMembership();await seedDishesIfEmpty();await loadAll();subscribeRealtime();
+ await findMembership();await seedDishesIfEmpty();await loadAll();subscribeRealtime();startReliableSync();
  document.getElementById("loading").style.display="none";document.getElementById("onboarding").style.display="none";document.getElementById("mainApp").style.display="block";document.getElementById("bottomNav").style.display="block";
 }
+
+let syncTimer=null;
+let syncBusy=false;
+
+async function syncLatest(){
+  if(syncBusy || !state.user || !state.household || !state.member) return;
+  if(document.visibilityState && document.visibilityState!=="visible") return;
+  syncBusy=true;
+  try{
+    await loadAll();
+  }catch(e){
+    console.warn("Background sync failed", e);
+  }finally{
+    syncBusy=false;
+  }
+}
+
+function startReliableSync(){
+  if(syncTimer) clearInterval(syncTimer);
+  syncTimer=setInterval(()=>{ syncLatest(); },15000);
+  window.addEventListener("focus", syncLatest);
+  window.addEventListener("pageshow", syncLatest);
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState==="visible") syncLatest();
+  });
+}
+
 async function boot(){
  try{await ensureAuth();if(await findMembership())await bootAfterMembership();else{document.getElementById("loading").style.display="none";document.getElementById("onboarding").style.display="block"}}
  catch(e){document.getElementById("loading").textContent="连接失败："+e.message}
@@ -544,7 +572,7 @@ document.getElementById("saveDishBtn").onclick=uploadDish;
 document.getElementById("saveDishEditBtn").onclick=saveDishEdit;
 document.getElementById("hideDishBtn").onclick=toggleDishActive;
 
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=6",{updateViaCache:"none"}).catch(()=>{}));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=8",{updateViaCache:"none"}).catch(()=>{}));
 
 if ("serviceWorker" in navigator) {
   let refreshing = false;

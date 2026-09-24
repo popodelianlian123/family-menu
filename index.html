@@ -204,7 +204,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:14px;backgrou
 <h3 id="editDishHeading">编辑菜品</h3>
 <label class="field"><span id="editDishNameLabel">菜名</span><input id="editDishName"></label>
 <label class="field"><span id="editDishCategoryLabel">分类</span><select id="editDishCategory"></select></label>
-<label class="field"><span id="editDishPhotoLabel">更换照片</span><input id="editDishPhoto" type="file" accept="image/*" capture="environment"></label>
+<label class="field"><span id="editDishPhotoLabel">更换照片</span><input id="editDishPhoto" type="file" accept="image/*"></label>
 <label class="field"><span id="editDishNoteLabel">备注</span><input id="editDishNote"></label>
 <label class="setting-row" style="margin-top:12px"><span id="editQuickLabel">快捷备用</span><input type="checkbox" id="editDishQuick"></label>
 <button class="primary" id="saveDishEditBtn">保存修改</button>
@@ -216,7 +216,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:14px;backgrou
 <h3 id="addDishHeading">添加菜品</h3>
 <label class="field"><span id="dishNameLabel">菜名</span><input id="newDishName"></label>
 <label class="field"><span id="dishCategoryLabel">分类</span><select id="newDishCategory"></select></label>
-<label class="field"><span id="dishPhotoLabel">照片</span><input id="newDishPhoto" type="file" accept="image/*" capture="environment"></label>
+<label class="field"><span id="dishPhotoLabel">照片</span><input id="newDishPhoto" type="file" accept="image/*"></label>
 <label class="field"><span id="dishNoteLabel">备注</span><input id="newDishNote"></label>
 <label class="setting-row" style="margin-top:12px"><span id="quickLabel">加入快捷备用选项</span><input type="checkbox" id="newDishQuick" checked></label>
 <button class="primary" id="saveDishBtn">保存</button><button class="secondary closeModal">取消</button>
@@ -451,7 +451,7 @@ window.openEditDish=function(id){
  document.getElementById("editDishHeading").textContent=state.lang==="zh"?"编辑菜品":"Edit dish";
  document.getElementById("editDishNameLabel").textContent=t("dishName");
  document.getElementById("editDishCategoryLabel").textContent=t("category");
- document.getElementById("editDishPhotoLabel").textContent=state.lang==="zh"?"更换照片":"Replace photo";
+ document.getElementById("editDishPhotoLabel").textContent=state.lang==="zh"?"从相册更换照片":"Choose replacement photo";
  document.getElementById("editDishNoteLabel").textContent=t("note");
  document.getElementById("editQuickLabel").textContent=t("quick");
  document.getElementById("saveDishEditBtn").textContent=state.lang==="zh"?"保存修改":"Save changes";
@@ -539,12 +539,12 @@ document.querySelectorAll(".closeModal").forEach(b=>b.onclick=()=>b.closest(".mo
 document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("show")}));
 document.getElementById("langBtn").onclick=document.getElementById("settingsLangBtn").onclick=()=>{state.lang=state.lang==="zh"?"en":"zh";localStorage.setItem("fm_lang",state.lang);renderAll()};
 document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));document.getElementById(b.dataset.target).classList.add("active")});
-document.getElementById("addDishFab").onclick=()=>{document.getElementById("addDishHeading").textContent=t("addDish");document.getElementById("dishNameLabel").textContent=t("dishName");document.getElementById("dishCategoryLabel").textContent=t("category");document.getElementById("dishPhotoLabel").textContent=t("photo");document.getElementById("dishNoteLabel").textContent=t("note");document.getElementById("quickLabel").textContent=t("quick");document.getElementById("saveDishBtn").textContent=t("save");const sel=document.getElementById("newDishCategory");sel.innerHTML="";["breakfast","meat","veg","soup","staple"].forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=t(c);sel.appendChild(o)});document.getElementById("addDishModal").classList.add("show")};
+document.getElementById("addDishFab").onclick=()=>{document.getElementById("addDishHeading").textContent=t("addDish");document.getElementById("dishNameLabel").textContent=t("dishName");document.getElementById("dishCategoryLabel").textContent=t("category");document.getElementById("dishPhotoLabel").textContent=state.lang==="zh"?"选择照片":"Choose photo";document.getElementById("dishNoteLabel").textContent=t("note");document.getElementById("quickLabel").textContent=t("quick");document.getElementById("saveDishBtn").textContent=t("save");const sel=document.getElementById("newDishCategory");sel.innerHTML="";["breakfast","meat","veg","soup","staple"].forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=t(c);sel.appendChild(o)});document.getElementById("addDishModal").classList.add("show")};
 document.getElementById("saveDishBtn").onclick=uploadDish;
 document.getElementById("saveDishEditBtn").onclick=saveDishEdit;
 document.getElementById("hideDishBtn").onclick=toggleDishActive;
 
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=5",{updateViaCache:"none"}).catch(()=>{}));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=6",{updateViaCache:"none"}).catch(()=>{}));
 
 if ("serviceWorker" in navigator) {
   let refreshing = false;

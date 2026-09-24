@@ -1,4 +1,4 @@
-const CACHE = 'family-menu-v3';
+const CACHE = 'family-menu-v4';
 const STATIC_ASSETS = [
   './manifest.webmanifest',
   './icon-192.png',

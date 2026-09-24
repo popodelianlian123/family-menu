@@ -99,6 +99,20 @@ input,select{width:100%;border:1px solid var(--line);border-radius:14px;backgrou
   }
 }
 
+
+.logout-btn{
+  width:100%;
+  margin-top:22px;
+  padding:14px 16px;
+  border:1px solid #e7cfc4;
+  border-radius:16px;
+  background:#fff;
+  color:#a5533c;
+  font-size:16px;
+  font-weight:800;
+}
+.logout-btn:active{transform:scale(.99)}
+
 </style>
 </head>
 <body>
@@ -167,6 +181,7 @@ input,select{width:100%;border:1px solid var(--line);border-radius:14px;backgrou
     <div class="setting-row"><div><strong id="familyInfoName"></strong><div class="subtle" id="familyInfoRole"></div></div></div>
     <div class="setting-row"><div><strong id="languageLabel">语言</strong><div class="subtle">中文 / English</div></div><button class="lang" id="settingsLangBtn">EN</button></div>
     <div id="cookDaySettings"></div>
+    <button class="logout-btn" id="logoutBtn">退出登录</button>
   </div>
 </section>
 </main>
@@ -385,6 +400,7 @@ function renderHistory(){
  if(!Object.keys(byDate).length)list.innerHTML=`<div class="empty">${t("none")}</div>`;
 }
 function renderSettings(){
+ document.getElementById("logoutBtn").textContent=state.lang==="zh"?"退出登录":"Log out";
  document.getElementById("familyInfoName").textContent=state.household.name;
  document.getElementById("familyInfoRole").textContent=`${emoji[state.member.role]} ${roleNames[state.lang][state.member.role]}`;
  const box=document.getElementById("cookDaySettings");box.innerHTML="";
@@ -490,6 +506,23 @@ document.getElementById("tabJoin").onclick=()=>{document.getElementById("createB
 document.getElementById("createFamilyBtn").onclick=async()=>{try{document.getElementById("onboardError").textContent="";const name=document.getElementById("familyName").value.trim(),code=document.getElementById("createCode").value.trim();const {data,error}=await sb.rpc("create_household",{p_name:name,p_join_code:code,p_role:"me"});if(error)throw error;await bootAfterMembership()}catch(e){document.getElementById("onboardError").textContent=e.message}};
 document.getElementById("joinFamilyBtn").onclick=async()=>{try{document.getElementById("onboardError").textContent="";const code=document.getElementById("joinCode").value.trim(),role=document.getElementById("joinRole").value;const {data,error}=await sb.rpc("join_household",{p_join_code:code,p_role:role});if(error)throw error;await bootAfterMembership()}catch(e){document.getElementById("onboardError").textContent=e.message}};
 
+
+async function logout(){
+ const msg=state.lang==="zh"
+   ?"退出后，这台设备需要用家庭邀请码重新加入。确定退出吗？"
+   :"After logging out, this device will need the family invite code to join again. Log out?";
+ if(!confirm(msg)) return;
+ try{
+   if(channel){ try{await sb.removeChannel(channel)}catch(_e){} channel=null; }
+   const {error}=await sb.auth.signOut();
+   if(error) throw error;
+   state.user=null;state.household=null;state.member=null;state.dishes=[];state.items=[];state.settings=null;
+   location.replace(location.origin + location.pathname);
+ }catch(e){
+   alert((state.lang==="zh"?"退出失败：":"Log out failed: ")+e.message);
+ }
+}
+
 async function bootAfterMembership(){
  await findMembership();await seedDishesIfEmpty();await loadAll();subscribeRealtime();
  document.getElementById("loading").style.display="none";document.getElementById("onboarding").style.display="none";document.getElementById("mainApp").style.display="block";document.getElementById("bottomNav").style.display="block";
@@ -501,6 +534,7 @@ async function boot(){
 
 document.querySelectorAll(".editMeal").forEach(b=>b.onclick=()=>openPicker(b.dataset.meal));
 document.getElementById("savePickerBtn").onclick=savePicker;
+document.getElementById("logoutBtn").onclick=logout;
 document.querySelectorAll(".closeModal").forEach(b=>b.onclick=()=>b.closest(".modal").classList.remove("show"));
 document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("show")}));
 document.getElementById("langBtn").onclick=document.getElementById("settingsLangBtn").onclick=()=>{state.lang=state.lang==="zh"?"en":"zh";localStorage.setItem("fm_lang",state.lang);renderAll()};
@@ -510,7 +544,7 @@ document.getElementById("saveDishBtn").onclick=uploadDish;
 document.getElementById("saveDishEditBtn").onclick=saveDishEdit;
 document.getElementById("hideDishBtn").onclick=toggleDishActive;
 
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=4",{updateViaCache:"none"}).catch(()=>{}));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=5",{updateViaCache:"none"}).catch(()=>{}));
 
 if ("serviceWorker" in navigator) {
   let refreshing = false;
